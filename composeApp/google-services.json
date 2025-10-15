@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "32827173587",
+    "project_id": "ag-remision",
+    "storage_bucket": "ag-remision.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:32827173587:android:33259dff8d96fde4c1c226",
+        "android_client_info": {
+          "package_name": "com.agremision.veco"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAptT0azOGs3qsPYOm-v9QLYc-6DQJJ5UE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
