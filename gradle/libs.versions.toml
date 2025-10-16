@@ -18,6 +18,8 @@ kotlinx-serialization = "1.6.3"
 firebase-bom = "33.1.1"
 gitlive = "1.13.0"
 coroutines = "1.8.1"
+voyager = "1.0.0"
+androidx-materialIcons = "1.6.8"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -37,7 +39,10 @@ android-firebase-bom = { group = "com.google.firebase", name = "firebase-bom", v
 gitlive-firebase-firestore = { group = "dev.gitlive", name = "firebase-firestore", version.ref = "gitlive" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "coroutines" }
-
+gitlive-firebase-auth = { group = "dev.gitlive", name = "firebase-auth", version.ref = "gitlive" }
+voyager-navigator = { group = "cafe.adriel.voyager", name = "voyager-navigator", version.ref = "voyager" }
+voyager-transitions = { group = "cafe.adriel.voyager", name = "voyager-transitions", version.ref = "voyager" }
+androidx-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "androidx-materialIcons" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

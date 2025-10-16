@@ -43,17 +43,28 @@ kotlin {
             implementation(project.dependencies.platform(libs.android.firebase.bom))
         }
         commonMain.dependencies {
+            // Core de Compose
             implementation(compose.runtime)
             implementation(compose.foundation)
-            implementation(compose.material)
-            implementation(compose.material3)
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
-            implementation(libs.kotlinx.coroutines.core)
 
+            // SOLO Material 3
+            implementation(compose.material3)
+
+            // Iconos extendidos (que funcionan con Material 3)
+            implementation(libs.androidx.material.icons.extended)
+
+            // Navegación con Voyager
+            implementation(libs.voyager.navigator)
+            implementation(libs.voyager.transitions)
+
+            // Firebase y Coroutines
+            implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.gitlive.firebase.firestore)
+            implementation(libs.gitlive.firebase.auth)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)

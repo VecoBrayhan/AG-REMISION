@@ -1,11 +1,10 @@
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import data.FirestoreUserRepository
-import data.InMemoryUserRepository
-import presentation.UserScreen
+import presentation.navigation.Navigation
 
 @Composable
 fun App() {
-    val userRepository = remember { FirestoreUserRepository() }
-    UserScreen(userRepository)
+    MaterialTheme {
+        Navigation()
+    }
 }
