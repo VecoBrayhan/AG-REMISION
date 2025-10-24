@@ -38,11 +38,14 @@ kotlin {
         val desktopMain by getting
 
         androidMain.dependencies {
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+            implementation("com.google.android.gms:play-services-auth:21.2.0")
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
             implementation(project.dependencies.platform(libs.android.firebase.bom))
         }
         commonMain.dependencies {
+            implementation("org.apache.poi:poi-ooxml:5.2.3")
             // Core de Compose
             implementation(compose.runtime)
             implementation(compose.foundation)
@@ -59,6 +62,7 @@ kotlin {
             // Navegación con Voyager
             implementation(libs.voyager.navigator)
             implementation(libs.voyager.transitions)
+            implementation(libs.voyager.tab.navigator)
 
             // Firebase y Coroutines
             implementation(libs.kotlinx.coroutines.core)
@@ -69,6 +73,7 @@ kotlin {
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
+            implementation("org.apache.pdfbox:pdfbox:2.0.27")
         }
     }
 }
@@ -101,12 +106,14 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
     buildFeatures {
         compose = true
     }
     dependencies {
         debugImplementation(compose.uiTooling)
+        coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
     }
 }
 

@@ -30,6 +30,8 @@ object RegisterScreen : Screen {
         var confirmPassword by remember { mutableStateOf("") }
         var isPasswordVisible by remember { mutableStateOf(false) }
         var isLoading by remember { mutableStateOf(false) }
+        val passwordsMatch = password == confirmPassword
+        var photoUrl by remember { mutableStateOf("") }
 
         Scaffold(
             snackbarHost = { ReusableSnackbarHost(controller = snackbarController) }
@@ -63,30 +65,31 @@ object RegisterScreen : Screen {
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 LoadingButton(
-                    text = "Registrar",
+                    text = if (isLoading) "Enviando verificación..." else "Registrarse",
                     isLoading = isLoading,
                     onClick = {
-                        if (password != confirmPassword) {
-                            snackbarController.showError("Las contraseñas no coinciden.")
-                        } else {
-                            scope.launch {
-                                isLoading = true
-                                try {
-                                    val result = authRepository.register(name.trim(), email.trim(), password)
-                                    if (result.isSuccess) {
-                                        snackbarController.showSuccess("¡Registro exitoso! Revisa tu correo para verificar tu cuenta.")
-                                        delay(2000L)
-                                        navigator.replaceAll(LoginScreen)
-                                    } else {
-                                        val errorMessage = translateError(result.exceptionOrNull()?.message)
-                                        snackbarController.showError(errorMessage)
-                                    }
-                                } finally {
-                                    isLoading = false
+                        if (!passwordsMatch) {
+                            snackbarController.showError("Las contraseñas no coinciden")
+                            return@LoadingButton
+                        }
+                        scope.launch {
+                            isLoading = true
+                            try {
+                                val result = authRepository.register(name.trim(), email.trim(), password, photoUrl.trim())
+                                if (result.isSuccess) {
+                                    snackbarController.showSuccess("¡Registro exitoso! Revisa tu correo para verificar tu cuenta.")
+                                    delay(2000L)
+                                    navigator.replaceAll(LoginScreen)
+                                } else {
+                                    val errorMessage = translateError(result.exceptionOrNull()?.message)
+                                    snackbarController.showError(errorMessage)
                                 }
+                            } finally {
+                                isLoading = false
                             }
                         }
-                    }
+                    },
+                    modifier = Modifier.height(50.dp)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {

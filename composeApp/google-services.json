@@ -12,7 +12,20 @@
           "package_name": "com.agremision.veco"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "32827173587-57toa855cnnagauagp4rqvdksvog313d.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.agremision.veco",
+            "certificate_hash": "d5703af15a730d836655930dffc4874825acc241"
+          }
+        },
+        {
+          "client_id": "32827173587-36n2s1c2vjp85br43o6000eev00c0hpl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAptT0azOGs3qsPYOm-v9QLYc-6DQJJ5UE"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "32827173587-36n2s1c2vjp85br43o6000eev00c0hpl.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "32827173587-i2qrd5do11cq5pui2dsod9u6tbpqo5mq.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.agremision.veco"
+              }
+            }
+          ]
         }
       }
     }

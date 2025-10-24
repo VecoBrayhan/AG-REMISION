@@ -75,8 +75,8 @@ object SettingsScreen : Screen {
                 onClick = {
                     scope.launch {
                         authRepository.logout()
-                        // Reemplaza toda la pila de navegación con la pantalla de Login
-                        navigator.replaceAll(LoginScreen)
+                        val parentNavigator = navigator.parent ?: navigator
+                        parentNavigator.replaceAll(LoginScreen)
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),

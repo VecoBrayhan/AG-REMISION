@@ -1,40 +1,52 @@
 package presentation.main
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
-import presentation.guide.HistoryScreen
-import presentation.guide.UploadGuideScreen
-import presentation.settings.SettingsScreen
+import cafe.adriel.voyager.navigator.tab.CurrentTab
+import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
+import cafe.adriel.voyager.navigator.tab.Tab
+import cafe.adriel.voyager.navigator.tab.TabNavigator
 
 object MainScreen : Screen {
     @Composable
     override fun Content() {
-        val navigator = LocalNavigator.currentOrThrow
-
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Button(onClick = { navigator.push(UploadGuideScreen) }) {
-                Text("Subir Guía de Remisión")
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = { navigator.push(HistoryScreen) }) {
-                Text("Historial de Guías")
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = { navigator.push(SettingsScreen) }) {
-                Text("Configuración")
-            }
+        TabNavigator(HomeTab) {
+            Scaffold(
+                content = { padding ->
+                    Box(Modifier.padding(padding)) {
+                        CurrentTab()
+                    }
+                },
+                bottomBar = {
+                    NavigationBar {
+                        TabNavigationItem(HomeTab)
+                        TabNavigationItem(UploadTab)
+                        TabNavigationItem(HistoryTab)
+                        TabNavigationItem(SettingsTab)
+                    }
+                }
+            )
         }
     }
+}
+
+@Composable
+private fun RowScope.TabNavigationItem(tab: Tab) {
+    val tabNavigator = LocalTabNavigator.current
+
+    NavigationBarItem(
+        selected = tabNavigator.current == tab,
+        onClick = { tabNavigator.current = tab },
+        icon = { Icon(painter = tab.options.icon!!, contentDescription = tab.options.title) },
+        label = { Text(tab.options.title) }
+    )
 }

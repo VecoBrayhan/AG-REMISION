@@ -11,6 +11,7 @@ import com.google.firebase.FirebaseApp
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AppContext.initialize(this)
         FirebaseApp.initializeApp(this)
         setContent {
             App()
