@@ -20,13 +20,27 @@ import presentation.components.PdfViewer
 import utils.FileData
 import utils.FilePicker
 
+
+
+// --- IMPORTACIONES CLAVE FALTANTES ---
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue  // Necesario para 'by'
+import androidx.compose.runtime.setValue    // Necesario para 'by'
+import kotlinx.coroutines.launch
+import data.FirestoreGuideRepository
+import domain.RemissionGuide
+import presentation.components.rememberSnackbarController
+
 object UploadGuideScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
+        val snackbarController = rememberSnackbarController()
+
         var showFilePicker by remember { mutableStateOf(false) }
         var selectedFile by remember { mutableStateOf<FileData?>(null) }
-
         val fileType = remember(selectedFile) {
             when {
                 selectedFile?.fileName?.endsWith(".pdf", ignoreCase = true) == true -> "pdf"
@@ -35,7 +49,6 @@ object UploadGuideScreen : Screen {
                 else -> "other"
             }
         }
-
         FilePicker(
             show = showFilePicker,
             fileExtensions = listOf("pdf", "xls", "xlsx"),
@@ -44,6 +57,10 @@ object UploadGuideScreen : Screen {
                 showFilePicker = false
             }
         )
+        val scope = rememberCoroutineScope()
+        val guideRepository = remember { FirestoreGuideRepository() }
+        var isLoading by remember { mutableStateOf(false) }
+        var extractedGuide by remember { mutableStateOf<RemissionGuide?>(null) }
 
         Scaffold(
             topBar = {
@@ -104,11 +121,43 @@ object UploadGuideScreen : Screen {
                     Spacer(Modifier.height(16.dp))
                 }
                 Button(
-                    onClick = { /* TODO: Lógica para extraer datos del selectedFile */ },
-                    enabled = selectedFile != null, // Solo activo si hay archivo
+                    onClick = {
+                        selectedFile?.let { file ->
+                            scope.launch {
+                                isLoading = true
+                                extractedGuide = null
+
+                                val result = guideRepository.extractDataFromGuide(file.bytes, file.fileName)
+
+                                if (result.isSuccess) {
+                                    extractedGuide = result.getOrNull()
+                                    // ¡Éxito! Ahora 'extractedGuide' tiene los datos
+                                    // podrías mostrarlos en la UI
+                                    snackbarController.showSuccess("Datos extraídos")
+                                    // --- GUARDADO AUTOMÁTICO (Opcional) ---
+                                    // O puedes guardarlo directamente en Firebase
+                                    val saveResult = guideRepository.addGuide(extractedGuide!!)
+                                    if(saveResult.isSuccess) {
+                                        snackbarController.showSuccess("¡Guía guardada!")
+                                        selectedFile = null // Limpiar para la próxima subida
+                                    }
+
+                                } else {
+                                    // Usa el operador Elvis (?:) para dar un mensaje por defecto si es null
+                                    snackbarController.showError(result.exceptionOrNull()?.message ?: "Ocurrió un error desconocido")
+                                }
+                                isLoading = false
+                            }
+                        }
+                    },
+                    enabled = selectedFile != null && !isLoading,
                     modifier = Modifier.fillMaxWidth().height(50.dp)
                 ) {
-                    Text("Extraer Datos")
+                    if (isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    } else {
+                        Text("Extraer y Guardar Datos")
+                    }
                 }
             }
         }

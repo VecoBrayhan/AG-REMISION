@@ -38,6 +38,7 @@ kotlin {
         val desktopMain by getting
 
         androidMain.dependencies {
+            implementation(libs.ktor.client.android) // AÑADIDO
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
             implementation("com.google.android.gms:play-services-auth:21.2.0")
             implementation(compose.preview)
@@ -69,11 +70,21 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.gitlive.firebase.firestore)
             implementation(libs.gitlive.firebase.auth)
+            implementation(libs.gitlive.firebase.functions)
+
+            // --- KTOR AÑADIDO ---
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
             implementation("org.apache.pdfbox:pdfbox:2.0.27")
+            implementation(libs.ktor.client.cio) // AÑADIDO
+        }
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
         }
     }
 }

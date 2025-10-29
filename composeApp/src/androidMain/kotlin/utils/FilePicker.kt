@@ -9,18 +9,14 @@ import androidx.compose.ui.platform.LocalContext
 
 @Composable
 actual fun FilePicker(
-    show: Boolean,
-    fileExtensions: List<String>,
-    onFileSelected: (FileData?) -> Unit
+    show: Boolean, fileExtensions: List<String>, onFileSelected: (FileData?) -> Unit
 ) {
     val context = LocalContext.current
-
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
         onResult = { uri ->
             if (uri != null) {
                 var fileName = "unknown_file"
-                // --- SOLUTION HERE: Robust way to get the filename ---
                 context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
                     if (cursor.moveToFirst()) {
                         val displayNameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
@@ -29,7 +25,6 @@ actual fun FilePicker(
                         }
                     }
                 }
-
                 context.contentResolver.openInputStream(uri)?.use { inputStream ->
                     val bytes = inputStream.readBytes()
                     onFileSelected(FileData(bytes, fileName))
@@ -39,7 +34,6 @@ actual fun FilePicker(
             }
         }
     )
-
     LaunchedEffect(show) {
         if (show) {
             val mimeTypes = fileExtensions.map { extension ->

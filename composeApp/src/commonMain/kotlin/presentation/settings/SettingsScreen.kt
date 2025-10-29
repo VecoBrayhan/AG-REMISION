@@ -75,6 +75,7 @@ object SettingsScreen : Screen {
                 onClick = {
                     scope.launch {
                         authRepository.logout()
+                        authRepository.signOutGoogle()
                         val parentNavigator = navigator.parent ?: navigator
                         parentNavigator.replaceAll(LoginScreen)
                     }

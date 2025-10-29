@@ -36,7 +36,6 @@ actual fun PdfViewer(
     }
 
     if (renderer == null) {
-        // Muestra un mensaje si el PDF no se puede cargar
     } else {
         val pageCount = renderer?.pageCount ?: 0
         LazyColumn(modifier = modifier) {
