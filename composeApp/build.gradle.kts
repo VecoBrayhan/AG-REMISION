@@ -46,6 +46,7 @@ kotlin {
             implementation(project.dependencies.platform(libs.android.firebase.bom))
         }
         commonMain.dependencies {
+            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
             implementation("org.apache.poi:poi-ooxml:5.2.3")
             // Core de Compose
             implementation(compose.runtime)

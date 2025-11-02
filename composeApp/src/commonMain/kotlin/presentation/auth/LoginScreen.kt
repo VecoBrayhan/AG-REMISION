@@ -19,7 +19,7 @@ import domain.GoogleSignInHandler
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import presentation.components.CustomTextField
-import presentation.components.LoadingButton
+import presentation.components.LoadingActionButtonComponent
 import presentation.components.ReusableSnackbarHost
 import presentation.components.rememberSnackbarController
 import presentation.main.MainScreen
@@ -88,9 +88,10 @@ object LoginScreen : Screen {
                     onPasswordToggleClick = { isPasswordVisible = !isPasswordVisible }
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                LoadingButton(
+                LoadingActionButtonComponent(
                     text = "Iniciar sesión",
                     isLoading = isLoading,
+                    isEnabled = true,
                     onClick = {
                         scope.launch {
                             isLoading = true
@@ -107,6 +108,7 @@ object LoginScreen : Screen {
                             }
                         }
                     },
+                    modifier = Modifier.height(50.dp)
                 )
 
                 Spacer(modifier = Modifier.height(15.dp))

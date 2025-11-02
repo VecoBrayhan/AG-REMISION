@@ -13,10 +13,11 @@ import data.FirebaseAuthRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import presentation.components.CustomTextField
-import presentation.components.LoadingButton
+import presentation.components.LoadingActionButtonComponent
 import presentation.components.ReusableSnackbarHost
 import presentation.components.rememberSnackbarController
 import utils.translateError
+
 object RegisterScreen : Screen {
     @Composable
     override fun Content() {
@@ -64,18 +65,24 @@ object RegisterScreen : Screen {
                     onPasswordToggleClick = { isPasswordVisible = !isPasswordVisible }
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                LoadingButton(
-                    text = if (isLoading) "Enviando verificación..." else "Registrarse",
+                LoadingActionButtonComponent(
+                    text = "Registrarse",
                     isLoading = isLoading,
+                    isEnabled = true,
                     onClick = {
                         if (!passwordsMatch) {
                             snackbarController.showError("Las contraseñas no coinciden")
-                            return@LoadingButton
+                            return@LoadingActionButtonComponent
                         }
                         scope.launch {
                             isLoading = true
                             try {
-                                val result = authRepository.register(name.trim(), email.trim(), password, photoUrl.trim())
+                                val result = authRepository.register(
+                                    name.trim(),
+                                    email.trim(),
+                                    password,
+                                    photoUrl.trim()
+                                )
                                 if (result.isSuccess) {
                                     snackbarController.showSuccess("¡Registro exitoso! Revisa tu correo para verificar tu cuenta.")
                                     delay(2000L)
@@ -91,6 +98,7 @@ object RegisterScreen : Screen {
                     },
                     modifier = Modifier.height(50.dp)
                 )
+
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("¿Ya tienes cuenta? ")
