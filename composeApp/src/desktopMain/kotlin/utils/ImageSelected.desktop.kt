@@ -3,6 +3,6 @@ package utils
 import androidx.compose.runtime.Composable
 
 @Composable
-actual fun rememberImagePicker(onImageSelected: (FileData?) -> Unit): (ImageSource) -> Unit {
+actual fun rememberImagePicker(onImageSelected: (FileData?) -> Unit): () -> Unit {
     TODO("Not yet implemented")
 }

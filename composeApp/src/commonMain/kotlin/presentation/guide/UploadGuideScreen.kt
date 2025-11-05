@@ -28,6 +28,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import data.FirestoreGuideRepository
 import domain.RemissionGuide
 import kotlinx.coroutines.launch
+// Tus componentes existentes
 import presentation.components.ExcelViewer
 import presentation.components.LoadingActionButtonComponent
 import presentation.components.PdfViewer
@@ -35,12 +36,12 @@ import presentation.components.ReusableSnackbarHost
 import presentation.components.TopBarComponent
 import presentation.components.TopBarType
 import presentation.components.rememberSnackbarController
+// Tus utils existentes
 import utils.AppColors
 import utils.FileData
 import utils.FilePicker
 import utils.formatFileSize
 // --- NUEVOS IMPORTS ---
-import utils.ImageSource // <-- Importar ImageSource
 import utils.rememberImagePicker // <-- Importar el nuevo ImagePicker
 import utils.toKmpImageBitmap // <-- IMPORTAR LA FUNCIÓN EXPECT/ACTUAL
 
@@ -52,30 +53,29 @@ object UploadGuideScreen : Screen {
         var showFilePicker by remember { mutableStateOf(false) }
         var selectedFile by remember { mutableStateOf<FileData?>(null) }
 
-        // --- 1. Inicializa el ImagePicker ---
+        // --- 1. Inicializa el ImagePicker (para Galería) ---
         val imagePickerLauncher = rememberImagePicker { fileData ->
-            // El callback cuando se selecciona una imagen (cámara o galería)
+            // El callback cuando se selecciona una imagen
             selectedFile = fileData
         }
 
-        // --- 2. Actualiza el FilePicker para incluir todos los tipos ---
+        // --- 2. Actualiza el FilePicker (SOLO para Documentos) ---
         FilePicker(
             show = showFilePicker,
-            // Añade los tipos de imagen aquí también
-            fileExtensions = listOf("pdf", "xls", "xlsx", "png", "jpg", "jpeg"),
+            // ¡CORREGIDO! Solo muestra estos tipos de archivo
+            fileExtensions = listOf("pdf", "xls", "xlsx"),
             onFileSelected = { fileData ->
                 selectedFile = fileData
                 showFilePicker = false
             }
         )
 
-        // --- 3. Actualiza el fileType para detectar imágenes ---
+        // --- 3. El fileType sigue detectando todo (¡esto está bien!) ---
         val fileType = remember(selectedFile) {
             when {
                 selectedFile?.fileName?.endsWith(".pdf", ignoreCase = true) == true -> "pdf"
                 selectedFile?.fileName?.endsWith(".xls", ignoreCase = true) == true -> "excel"
                 selectedFile?.fileName?.endsWith(".xlsx", ignoreCase = true) == true -> "excel"
-                // Detectar imágenes
                 selectedFile?.fileName?.endsWith(".png", ignoreCase = true) == true -> "image"
                 selectedFile?.fileName?.endsWith(".jpg", ignoreCase = true) == true -> "image"
                 selectedFile?.fileName?.endsWith(".jpeg", ignoreCase = true) == true -> "image"
@@ -109,18 +109,17 @@ object UploadGuideScreen : Screen {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (selectedFile == null) {
-                    // --- 4. Pasa los nuevos launchers a la vista inicial ---
+                    // --- 4. Vista inicial actualizada (sin cámara) ---
                     InitialUploadView(
                         onSelectFileClick = { showFilePicker = true },
-                        onCameraClick = { imagePickerLauncher(ImageSource.CAMERA) },
-                        onGalleryClick = { imagePickerLauncher(ImageSource.GALLERY) }
+                        onGalleryClick = { imagePickerLauncher() }
                     )
                 } else {
-                    // Header con información del archivo (actualizado para 'image')
+                    // Header con información del archivo
                     ProfessionalFilePreviewHeader(
                         fileName = selectedFile!!.fileName,
                         fileSize = selectedFile!!.bytes.size,
-                        fileType = fileType, // Pasa el tipo de archivo actualizado
+                        fileType = fileType,
                         onChangeFileClick = {
                             selectedFile = null
                             extractedGuide = null
@@ -129,7 +128,7 @@ object UploadGuideScreen : Screen {
 
                     Spacer(Modifier.height(16.dp))
 
-                    // Vista previa del documento (actualizada para 'image')
+                    // Vista previa del documento
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -156,7 +155,6 @@ object UploadGuideScreen : Screen {
                                             excelBytes = selectedFile!!.bytes
                                         )
                                     }
-                                    // --- 5. Añade la vista previa de imagen ---
                                     "image" -> {
                                         KmpImagePreview(
                                             bytes = selectedFile!!.bytes,
@@ -171,23 +169,19 @@ object UploadGuideScreen : Screen {
                         }
                     }
                     Spacer(Modifier.height(16.dp))
-
                 }
 
-                // --- 6. El botón de carga (NO CAMBIA NADA) ---
-                // Tu lógica de IA ya es multimodal, así que no necesita cambios.
+                // Botón de carga (Sin cambios)
                 LoadingActionButtonComponent(
                     text = "Extraer y guardar datos",
                     icon = Icons.Filled.SaveAlt,
-                    isEnabled = selectedFile != null, // El botón maneja internamente !isLoading
+                    isEnabled = selectedFile != null,
                     isLoading = isLoading,
                     onClick = {
                         selectedFile?.let { file ->
                             scope.launch {
                                 isLoading = true
                                 extractedGuide = null
-                                // Esta función ya envía el tipo de archivo correcto
-                                // y el backend sabe qué hacer (texto o imagen)
                                 val result = guideRepository.extractDataFromGuide(file.bytes, file.fileName)
                                 if (result.isSuccess) {
                                     extractedGuide = result.getOrNull()
@@ -197,7 +191,7 @@ object UploadGuideScreen : Screen {
                                         val saveResult = guideRepository.addGuide(extractedGuide!!)
                                         if (saveResult.isSuccess) {
                                             snackbarController.showSuccess("¡Guía guardada exitosamente!")
-                                            kotlinx.coroutines.delay(1500) // Espera para que el usuario vea el snackbar
+                                            kotlinx.coroutines.delay(1500)
                                             selectedFile = null
                                             extractedGuide = null
                                         } else {
@@ -223,31 +217,27 @@ object UploadGuideScreen : Screen {
 
 /**
  * Vista previa de imagen KMP que decodifica un ByteArray.
- * (Funciona en Android y Desktop. iOS puede requerir una implementación 'actual')
  */
 @Composable
 private fun KmpImagePreview(bytes: ByteArray, modifier: Modifier = Modifier) {
-    // --- USA LA NUEVA FUNCIÓN 'EXPECT' ---
     val bitmap: ImageBitmap? = bytes.toKmpImageBitmap()
-    // ------------------------------------
 
     if (bitmap != null) {
         Image(
             bitmap = bitmap,
             contentDescription = "Vista previa de imagen",
-            modifier = modifier.padding(8.dp), // Añade un padding
-            contentScale = ContentScale.Fit // Asegura que la imagen se ajuste
+            modifier = modifier.padding(8.dp),
+            contentScale = ContentScale.Fit
         )
     } else {
         PreviewNotAvailable(text = "No se pudo cargar la vista previa")
     }
 }
 
-// --- 7. Actualiza la vista inicial para mostrar los 3 botones ---
+// --- 7. Vista inicial actualizada (SIN CÁMARA) ---
 @Composable
 private fun ColumnScope.InitialUploadView(
     onSelectFileClick: () -> Unit,
-    onCameraClick: () -> Unit,
     onGalleryClick: () -> Unit
 ) {
     Spacer(modifier = Modifier.height(24.dp))
@@ -281,7 +271,7 @@ private fun ColumnScope.InitialUploadView(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    "Toma una foto, selecciona una imagen o un archivo (PDF/Excel) para extraer y guardar los datos.", // Texto actualizado
+                    "Selecciona una imagen de tu galería o un archivo (PDF/Excel) para extraer y guardar los datos.", // Texto actualizado
                     fontSize = 13.sp,
                     color = AppColors.VetTextSecondary,
                     lineHeight = 18.sp
@@ -349,39 +339,21 @@ private fun ColumnScope.InitialUploadView(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // --- Botones de Cámara y Galería ---
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                // --- Botón de Galería (ahora ocupa todo el ancho) ---
+                Button(
+                    onClick = onGalleryClick,
+                    modifier = Modifier.fillMaxWidth().height(56.dp), // <- Modificado
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AppColors.VetSecondaryColor
+                    ),
+                    shape = MaterialTheme.shapes.medium
                 ) {
-                    // Botón de Cámara
-                    Button(
-                        onClick = onCameraClick,
-                        modifier = Modifier.weight(1f).height(56.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = AppColors.VetPrimaryColor
-                        ),
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Icon(Icons.Filled.PhotoCamera, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Cámara")
-                    }
-
-                    // Botón de Galería
-                    Button(
-                        onClick = onGalleryClick,
-                        modifier = Modifier.weight(1f).height(56.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = AppColors.VetSecondaryColor
-                        ),
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Icon(Icons.Filled.Image, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Galería")
-                    }
+                    Icon(Icons.Filled.Image, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Seleccionar de Galería") // <-- Texto actualizado
                 }
+
+                // --- El botón de Cámara fue ELIMINADO ---
 
                 // --- Divisor "O" ---
                 Row(
@@ -414,7 +386,7 @@ private fun ColumnScope.InitialUploadView(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        "PDF / Excel / Img", // <-- Texto actualizado
+                        "PDF / Excel", // <-- Texto actualizado
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -473,24 +445,7 @@ private fun ProfessionalFilePreviewHeader(
     fileType: String,
     onChangeFileClick: () -> Unit
 ) {
-    // --- Define los colores e iconos basados en el fileType ---
-
-    // --- CORRECCIÓN ---
-    // El error 'Not enough information' se debe a que el compilador no puede
-    // inferir el tipo de la variable desestructurada (val (iconColor, ...))
-    // antes de que se evalúe el 'when'.
-    // Solución: Ser explícitos con los tipos.
-    val fileColors: Triple<Color, Color, ImageVector> = when (fileType) {
-        "pdf" -> Triple(Color(0xFFE53935), Color(0xFFE53935).copy(alpha = 0.15f), Icons.Outlined.PictureAsPdf)
-        "excel" -> Triple(Color(0xFF43A047), Color(0xFF43A047).copy(alpha = 0.15f), Icons.Outlined.TableChart)
-        "image" -> Triple(Color(0xFF1E88E5), Color(0xFF1E88E5).copy(alpha = 0.15f), Icons.Outlined.Image)
-        else -> Triple(Color.Gray, Color.Gray.copy(alpha = 0.15f), Icons.Outlined.Description)
-    }
-
-    val (iconColor, iconBgColor, fileIcon) = fileColors
-
     // --- FIN DE LA CORRECCIÓN ---
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = AppColors.VetCardBackground),
@@ -503,23 +458,6 @@ private fun ProfessionalFilePreviewHeader(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(MaterialTheme.shapes.medium)
-                    .background(iconBgColor), // Usa color dinámico
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = fileIcon, // Usa icono dinámico
-                    contentDescription = "File type",
-                    tint = iconColor, // Usa color dinámico
-                    modifier = Modifier.size(28.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = fileName,
@@ -537,7 +475,6 @@ private fun ProfessionalFilePreviewHeader(
                     fontSize = 12.sp
                 )
             }
-
             TextButton(
                 onClick = onChangeFileClick,
                 colors = ButtonDefaults.textButtonColors(
@@ -583,4 +520,3 @@ private fun PreviewNotAvailable(text: String = "Vista previa no disponible") {
         )
     }
 }
-
