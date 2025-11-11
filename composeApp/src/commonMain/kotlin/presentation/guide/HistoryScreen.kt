@@ -26,6 +26,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import data.FirebaseAuthRepository
 import data.FirestoreGuideRepository
 import domain.RemissionGuide
 import presentation.components.DateRangeSelector
@@ -48,7 +49,8 @@ private object HistoryListContentScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
-        val guideRepository = remember { FirestoreGuideRepository() }
+        val auth = remember { FirebaseAuthRepository() }
+        val guideRepository = remember { FirestoreGuideRepository(auth) }
         val allGuides by guideRepository.getGuides().collectAsState(emptyList())
 
         var fechaInicioSeleccionada by remember { mutableStateOf<Long?>(null) }

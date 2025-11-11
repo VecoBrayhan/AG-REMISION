@@ -1,6 +1,10 @@
 package domain
 
+import dev.gitlive.firebase.auth.FirebaseUser
+import kotlinx.coroutines.flow.Flow
+
 interface AuthRepository {
+    val currentUser: Flow<FirebaseUser?>
     fun getCurrentUserId(): String?
     suspend fun login(email: String, password: String): Result<Unit>
     suspend fun register(name: String, email: String, password: String, photoUrl: String): Result<Unit>

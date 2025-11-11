@@ -5,4 +5,5 @@ interface GuideRepository {
     fun getGuides(): Flow<List<RemissionGuide>>
     suspend fun addGuide(guide: RemissionGuide): Result<Unit>
     suspend fun extractDataFromGuide(fileBytes: ByteArray, fileName: String): Result<RemissionGuide>
+    suspend fun deleteGuide(guideId: String): Result<Unit>
 }

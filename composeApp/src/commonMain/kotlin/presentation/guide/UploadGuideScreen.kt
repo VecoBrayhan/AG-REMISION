@@ -25,6 +25,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
+import data.FirebaseAuthRepository
 import data.FirestoreGuideRepository
 import domain.RemissionGuide
 import kotlinx.coroutines.launch
@@ -84,7 +85,8 @@ object UploadGuideScreen : Screen {
         }
 
         val scope = rememberCoroutineScope()
-        val guideRepository = remember { FirestoreGuideRepository() }
+        val auth = remember { FirebaseAuthRepository() }
+        val guideRepository = remember { FirestoreGuideRepository(auth) }
         var isLoading by remember { mutableStateOf(false) }
         var extractedGuide by remember { mutableStateOf<RemissionGuide?>(null) }
 
@@ -170,7 +172,7 @@ object UploadGuideScreen : Screen {
                     }
                     Spacer(Modifier.height(16.dp))
                 }
-
+                
                 // Botón de carga (Sin cambios)
                 LoadingActionButtonComponent(
                     text = "Extraer y guardar datos",

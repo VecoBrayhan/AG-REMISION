@@ -17,16 +17,28 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.JsonConvertException
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-class FirestoreGuideRepository : GuideRepository {
+class FirestoreGuideRepository(
+    private val authRepository: FirebaseAuthRepository
+) : GuideRepository {
 
     private val firestore = Firebase.firestore
-    private val guidesCollection: CollectionReference = firestore.collection("guides")
+
+    private fun getGuidesCollection(userId: String): CollectionReference {
+        if (userId.isBlank()) {
+            throw IllegalArgumentException("El ID de usuario no puede estar vacío.")
+        }
+        return firestore.collection("users").document(userId).collection("guides")
+    }
+
     private val jsonParser = Json {
         ignoreUnknownKeys = true
         isLenient = true
@@ -38,51 +50,99 @@ class FirestoreGuideRepository : GuideRepository {
             json(jsonParser)
         }
     }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun getGuides(): Flow<List<RemissionGuide>> {
-        println("Firestore: Suscribiéndose a snapshots de 'guides'")
-        return guidesCollection.snapshots
-            .map { querySnapshot ->
-                println("Firestore: Recibidos ${querySnapshot.documents.size} documentos.")
-                querySnapshot.documents.mapNotNull { documentSnapshot ->
-                    try {
-                        val guideData = documentSnapshot.data<RemissionGuide>()
-                        val actualId = documentSnapshot.id
-                        val guideWithId = guideData.copy(id = actualId)
-                        if (guideWithId.id.isNotBlank()) {
-                            guideWithId
-                        } else {
-                            null
+        println("Firestore: Suscribiéndose al flujo de autenticación")
+
+        // 2. Usar flatMapLatest para re-suscribirse cuando el usuario cambie
+        return authRepository.currentUser.flatMapLatest { user ->
+            if (user == null || user.uid.isBlank()) {
+                // Si no hay usuario, devuelve un flujo con una lista vacía
+                println("Firestore: No hay usuario logueado. Emmiting lista vacía.")
+                flowOf(emptyList())
+            } else {
+                // Si hay usuario, obtiene su colección de guías
+                val userId = user.uid
+                println("Firestore: Usuario $userId logueado. Suscribiéndose a 'users/$userId/guides'")
+                getGuidesCollection(userId).snapshots
+                    .map { querySnapshot ->
+                        println("Firestore: Recibidos ${querySnapshot.documents.size} documentos para $userId.")
+                        querySnapshot.documents.mapNotNull { documentSnapshot ->
+                            try {
+                                val guideData = documentSnapshot.data<RemissionGuide>()
+                                val actualId = documentSnapshot.id
+                                val guideWithId = guideData.copy(id = actualId)
+                                if (guideWithId.id.isNotBlank()) {
+                                    guideWithId
+                                } else {
+                                    null
+                                }
+                            } catch (e: Exception) {
+                                println("Error al parsear documento: ${documentSnapshot.id}. Error: ${e.message}")
+                                null
+                            }
                         }
-                    } catch (e: Exception) {
-                        null
                     }
-                }
+                    .catch { e ->
+                        println(" Error al obtener guías de Firestore para $userId: ${e.message}")
+                        emit(emptyList())
+                    }
             }
-            .catch { e ->
-                emit(emptyList())
-            }
+        }
     }
 
-
     override suspend fun addGuide(guide: RemissionGuide): Result<Unit> {
+        // 3. Obtener el userId actual de forma síncrona
+        val userId = authRepository.getCurrentUserId()
+        if (userId.isNullOrBlank()) {
+            return Result.failure(Exception("No hay usuario autenticado para guardar la guía."))
+        }
+
         return try {
+            val collection = getGuidesCollection(userId)
             if (guide.id.isNotBlank()) {
-                val docRef = guidesCollection.document(guide.id)
+                val docRef = collection.document(guide.id)
                 docRef.set(guide)
             } else {
-                val docRef = guidesCollection.add(guide)
-                println(" Nueva guía guardada en Firestore con ID generado: ${docRef.id}")
+                val docRef = collection.add(guide)
+                println(" Nueva guía guardada en Firestore 'users/$userId/guides' con ID generado: ${docRef.id}")
                 docRef.set(guide.copy(id = docRef.id))
             }
             Result.success(Unit)
         } catch (e: Exception) {
-            println(" Error al guardar en Firestore: ${e.message}")
+            println(" Error al guardar en Firestore para $userId: ${e.message}")
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun deleteGuide(guideId: String): Result<Unit> {
+        // 4. Obtener el userId actual de forma síncrona
+        val userId = authRepository.getCurrentUserId()
+        if (userId.isNullOrBlank()) {
+            return Result.failure(Exception("No hay usuario autenticado para eliminar la guía."))
+        }
+
+        return try {
+            if (guideId.isBlank()) {
+                return Result.failure(IllegalArgumentException("El ID de la guía no puede estar vacío."))
+            }
+            val docRef = getGuidesCollection(userId).document(guideId)
+            docRef.delete()
+            println(" Guía eliminada de Firestore: 'users/$userId/guides/$guideId'")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            println(" Error al eliminar en Firestore para $userId: ${e.message}")
             e.printStackTrace()
             Result.failure(e)
         }
     }
 
 
+    /**
+     * Sin cambios: Este método no interactúa con las colecciones de Firestore.
+     */
     override suspend fun extractDataFromGuide(fileBytes: ByteArray, fileName: String): Result<RemissionGuide> {
         val apiUrl = "https://backend-ag-remision.vercel.app/api/extractGuideData"
         println(" KMP -> Vercel: Llamando a $apiUrl con archivo: $fileName (Tamaño: ${fileBytes.size} bytes)")
@@ -154,4 +214,3 @@ class FirestoreGuideRepository : GuideRepository {
         }
     }
 }
-

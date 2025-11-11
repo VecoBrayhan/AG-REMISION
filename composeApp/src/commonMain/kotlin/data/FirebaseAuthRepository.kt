@@ -1,18 +1,22 @@
 package data
 
 import dev.gitlive.firebase.Firebase
+import dev.gitlive.firebase.auth.FirebaseUser
 import dev.gitlive.firebase.auth.GoogleAuthProvider
 import dev.gitlive.firebase.auth.auth
 import dev.gitlive.firebase.firestore.firestore
 import dev.gitlive.firebase.firestore.where
 import domain.AuthRepository
 import domain.model.UserProfile
+import kotlinx.coroutines.flow.Flow
 
 class EmailNotVerifiedException(message: String) : Exception(message)
 class FirebaseAuthRepository : AuthRepository {
 
     private val auth = Firebase.auth
     private val firestore = Firebase.firestore
+    override val currentUser: Flow<FirebaseUser?> = auth.authStateChanged
+
     override fun getCurrentUserId(): String? {
         return auth.currentUser?.uid
     }
