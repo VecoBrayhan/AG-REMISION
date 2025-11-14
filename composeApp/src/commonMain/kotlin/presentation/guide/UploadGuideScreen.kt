@@ -1,7 +1,8 @@
+@file:Suppress("UNRESOLVED_REFERENCE")
 package presentation.guide
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image // <-- NECESARIO
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -16,9 +17,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap // <-- NECESARIO
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale // <-- NECESARIO
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -29,7 +30,6 @@ import data.FirebaseAuthRepository
 import data.FirestoreGuideRepository
 import domain.RemissionGuide
 import kotlinx.coroutines.launch
-// Tus componentes existentes
 import presentation.components.ExcelViewer
 import presentation.components.LoadingActionButtonComponent
 import presentation.components.PdfViewer
@@ -37,15 +37,12 @@ import presentation.components.ReusableSnackbarHost
 import presentation.components.TopBarComponent
 import presentation.components.TopBarType
 import presentation.components.rememberSnackbarController
-// Tus utils existentes
 import utils.AppColors
 import utils.FileData
 import utils.FilePicker
 import utils.formatFileSize
-// --- NUEVOS IMPORTS ---
-import utils.rememberImagePicker // <-- Importar el nuevo ImagePicker
-import utils.toKmpImageBitmap // <-- IMPORTAR LA FUNCIÓN EXPECT/ACTUAL
-
+import utils.rememberImagePicker
+import utils.toKmpImageBitmap
 object UploadGuideScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
@@ -53,25 +50,17 @@ object UploadGuideScreen : Screen {
         val snackbarController = rememberSnackbarController()
         var showFilePicker by remember { mutableStateOf(false) }
         var selectedFile by remember { mutableStateOf<FileData?>(null) }
-
-        // --- 1. Inicializa el ImagePicker (para Galería) ---
         val imagePickerLauncher = rememberImagePicker { fileData ->
-            // El callback cuando se selecciona una imagen
             selectedFile = fileData
         }
-
-        // --- 2. Actualiza el FilePicker (SOLO para Documentos) ---
         FilePicker(
             show = showFilePicker,
-            // ¡CORREGIDO! Solo muestra estos tipos de archivo
             fileExtensions = listOf("pdf", "xls", "xlsx"),
             onFileSelected = { fileData ->
                 selectedFile = fileData
                 showFilePicker = false
             }
         )
-
-        // --- 3. El fileType sigue detectando todo (¡esto está bien!) ---
         val fileType = remember(selectedFile) {
             when {
                 selectedFile?.fileName?.endsWith(".pdf", ignoreCase = true) == true -> "pdf"
@@ -83,13 +72,11 @@ object UploadGuideScreen : Screen {
                 else -> "other"
             }
         }
-
         val scope = rememberCoroutineScope()
         val auth = remember { FirebaseAuthRepository() }
         val guideRepository = remember { FirestoreGuideRepository(auth) }
         var isLoading by remember { mutableStateOf(false) }
         var extractedGuide by remember { mutableStateOf<RemissionGuide?>(null) }
-
         Scaffold(
             snackbarHost = { ReusableSnackbarHost(controller = snackbarController) },
             topBar = {
@@ -111,13 +98,11 @@ object UploadGuideScreen : Screen {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (selectedFile == null) {
-                    // --- 4. Vista inicial actualizada (sin cámara) ---
                     InitialUploadView(
                         onSelectFileClick = { showFilePicker = true },
                         onGalleryClick = { imagePickerLauncher() }
                     )
                 } else {
-                    // Header con información del archivo
                     ProfessionalFilePreviewHeader(
                         fileName = selectedFile!!.fileName,
                         fileSize = selectedFile!!.bytes.size,
@@ -127,10 +112,7 @@ object UploadGuideScreen : Screen {
                             extractedGuide = null
                         }
                     )
-
                     Spacer(Modifier.height(16.dp))
-
-                    // Vista previa del documento
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -164,7 +146,7 @@ object UploadGuideScreen : Screen {
                                         )
                                     }
                                     else -> {
-                                        PreviewNotAvailable()
+                                        Text("Vista previa no disponible")
                                     }
                                 }
                             }
@@ -172,8 +154,7 @@ object UploadGuideScreen : Screen {
                     }
                     Spacer(Modifier.height(16.dp))
                 }
-                
-                // Botón de carga (Sin cambios)
+
                 LoadingActionButtonComponent(
                     text = "Extraer y guardar datos",
                     icon = Icons.Filled.SaveAlt,
@@ -188,7 +169,6 @@ object UploadGuideScreen : Screen {
                                 if (result.isSuccess) {
                                     extractedGuide = result.getOrNull()
                                     snackbarController.showSuccess("Datos extraídos correctamente")
-
                                     if (extractedGuide != null) {
                                         val saveResult = guideRepository.addGuide(extractedGuide!!)
                                         if (saveResult.isSuccess) {
@@ -217,9 +197,6 @@ object UploadGuideScreen : Screen {
     }
 }
 
-/**
- * Vista previa de imagen KMP que decodifica un ByteArray.
- */
 @Composable
 private fun KmpImagePreview(bytes: ByteArray, modifier: Modifier = Modifier) {
     val bitmap: ImageBitmap? = bytes.toKmpImageBitmap()
@@ -232,11 +209,9 @@ private fun KmpImagePreview(bytes: ByteArray, modifier: Modifier = Modifier) {
             contentScale = ContentScale.Fit
         )
     } else {
-        PreviewNotAvailable(text = "No se pudo cargar la vista previa")
+        Text("No se pudo cargar la vista.")
     }
 }
-
-// --- 7. Vista inicial actualizada (SIN CÁMARA) ---
 @Composable
 private fun ColumnScope.InitialUploadView(
     onSelectFileClick: () -> Unit,
@@ -281,10 +256,7 @@ private fun ColumnScope.InitialUploadView(
             }
         }
     }
-
     Spacer(modifier = Modifier.height(32.dp))
-
-    // Zona de carga
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -341,7 +313,6 @@ private fun ColumnScope.InitialUploadView(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // --- Botón de Galería (ahora ocupa todo el ancho) ---
                 Button(
                     onClick = onGalleryClick,
                     modifier = Modifier.fillMaxWidth().height(56.dp), // <- Modificado
@@ -355,9 +326,6 @@ private fun ColumnScope.InitialUploadView(
                     Text("Seleccionar de Galería") // <-- Texto actualizado
                 }
 
-                // --- El botón de Cámara fue ELIMINADO ---
-
-                // --- Divisor "O" ---
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -388,27 +356,23 @@ private fun ColumnScope.InitialUploadView(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        "PDF / Excel", // <-- Texto actualizado
+                        "PDF / Excel",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
-
                 Spacer(modifier = Modifier.height(24.dp))
-
-                // --- Formatos Soportados (Actualizado) ---
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     FileTypeChip("PDF", Icons.Outlined.PictureAsPdf)
                     FileTypeChip("XLS/XLSX", Icons.Outlined.TableChart)
-                    FileTypeChip("PNG/JPG", Icons.Outlined.Image) // Añadido
+                    FileTypeChip("PNG/JPG", Icons.Outlined.Image)
                 }
             }
         }
     }
-
     Spacer(modifier = Modifier.height(16.dp))
 }
 
@@ -439,7 +403,6 @@ private fun FileTypeChip(label: String, icon: ImageVector) {
     }
 }
 
-// --- 8. Actualiza ProfessionalFilePreviewHeader (¡ERROR CORREGIDO!) ---
 @Composable
 private fun ProfessionalFilePreviewHeader(
     fileName: String,
@@ -447,7 +410,6 @@ private fun ProfessionalFilePreviewHeader(
     fileType: String,
     onChangeFileClick: () -> Unit
 ) {
-    // --- FIN DE LA CORRECCIÓN ---
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = AppColors.VetCardBackground),
@@ -492,33 +454,5 @@ private fun ProfessionalFilePreviewHeader(
                 Text("Cambiar", fontWeight = FontWeight.Bold)
             }
         }
-    }
-}
-
-// Actualizado para tomar un texto opcional
-@Composable
-private fun PreviewNotAvailable(text: String = "Vista previa no disponible") {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier.padding(32.dp)
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.HideImage,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = Color.Gray
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text,
-            style = MaterialTheme.typography.titleMedium,
-            color = Color.Gray
-        )
-        Text(
-            "El archivo se procesará correctamente",
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.Gray
-        )
     }
 }

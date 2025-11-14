@@ -38,6 +38,8 @@ kotlin {
         val desktopMain by getting
 
         androidMain.dependencies {
+            implementation("io.ktor:ktor-client-android:2.3.5")
+            implementation("io.ktor:ktor-client-okhttp:2.3.5")
             implementation(libs.ktor.client.android) // AÑADIDO
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
             implementation("com.google.android.gms:play-services-auth:21.2.0")
@@ -46,6 +48,11 @@ kotlin {
             implementation(project.dependencies.platform(libs.android.firebase.bom))
         }
         commonMain.dependencies {
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network.okhttp)
+            implementation("io.ktor:ktor-network:2.3.5")
+            implementation("io.ktor:ktor-client-core:2.3.11")
+
             implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
             implementation("org.apache.poi:poi-ooxml:5.2.3")
             // Core de Compose
@@ -79,6 +86,7 @@ kotlin {
             implementation(libs.ktor.serialization.kotlinx.json)
         }
         desktopMain.dependencies {
+            implementation("io.ktor:ktor-client-cio:2.3.11")
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
             implementation("org.apache.pdfbox:pdfbox:2.0.27")

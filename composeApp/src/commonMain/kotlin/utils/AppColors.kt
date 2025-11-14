@@ -3,6 +3,13 @@ package utils
 import androidx.compose.ui.graphics.Color
 
 object AppColors {
+
+    // STADO DE GUIAS
+    val StatusPendingColor = Color(0xFFFFA726)
+    val StatusApprovedColor = Color(0xFF0288D1)
+    val StatusSyncedColor = Color(0xFF66BB6A)
+    val StatusErrorColor = Color(0xFFE53935)
+
     val primaryColor = Color(0xFF388E3C)
     val errorColor = Color(0xFFDC2626)
     val lead = Color(0xFFF1F5F9)

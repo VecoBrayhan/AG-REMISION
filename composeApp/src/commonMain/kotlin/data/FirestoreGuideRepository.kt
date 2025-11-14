@@ -25,6 +25,9 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.datetime.Clock
+import utils.formatIsoToReadableDate
+import domain.GuideStatus
 
 class FirestoreGuideRepository(
     private val authRepository: FirebaseAuthRepository
@@ -160,11 +163,31 @@ class FirestoreGuideRepository(
                 println(" KMP <- Vercel: Respuesta OK (Texto): $responseBodyText")
                 val geminiResponse: GeminiResponse = jsonParser.decodeFromString(responseBodyText)
                 println(" KMP <- Vercel: Respuesta OK deserializada: $geminiResponse")
+
+                // --- INICIO DE CAMBIOS REQUERIDOS ---
+
+                // 1. Capturar la fecha y hora actual del registro (formato ISO 8601)
+                val fechaDeRegistroActual = Clock.System.now().toString()
+                val fechaFormt = formatIsoToReadableDate(fechaDeRegistroActual)
+
+                println(" KMP: Fecha de registro capturada: $fechaDeRegistroActual")
+
                 val extractedDetails = geminiResponse.extractedData
                 val extractedDataStringMap = mutableMapOf<String, String>()
-                extractedDetails?.fechaLlegada?.takeIf { it.isNotBlank() }?.let { extractedDataStringMap["fechaLlegada"] = it }
-                extractedDetails?.fechaRegistro?.takeIf { it.isNotBlank() }?.let { extractedDataStringMap["fechaRegistro"] = it }
+
+                // 2. Mapear 'fechaLlegada' (API) a 'fechaGuiaRemitente' (Mapa)
+                extractedDetails?.fechaLlegada?.takeIf { it.isNotBlank() }?.let {
+                    extractedDataStringMap["fechaGuiaRemitente"] = it
+                }
+
+                // 3. Usar la fecha de registro actual capturada, ignorando la de la API
+                extractedDataStringMap["fechaRegistro"] = fechaFormt
+
+                // 4. Mapeo de campos restantes (sin cambios)
                 extractedDetails?.costoTransporte?.takeIf { it.isNotBlank() }?.let { extractedDataStringMap["costoTransporte"] = it }
+
+                // --- FIN DE CAMBIOS REQUERIDOS ---
+
                 extractedDetails?.productos?.let { listaProductos ->
                     if (listaProductos.isNotEmpty()) {
                         try {
@@ -181,14 +204,15 @@ class FirestoreGuideRepository(
                         println(" KMP: La lista de productos recibida estaba vacía.")
                     }
                 } ?: println(" KMP: No se encontró la clave 'productos' en extractedData.")
+
                 val guide = RemissionGuide(
                     guideName = fileName,
                     date = geminiResponse.date?.takeIf { it.isNotBlank() } ?: "N/A",
                     ruc = geminiResponse.ruc?.takeIf { it.isNotBlank() } ?: "N/A",
-                    status = "Extraído",
-                    extractedData = extractedDataStringMap
+                    status = GuideStatus.PENDING_REVIEW,
+                    extractedData = extractedDataStringMap // Se usa el mapa modificado
                 )
-                println(" KMP: Objeto RemissionGuide creado: $guide")
+                println(" KMP: Objeto RemissionGuide creado con estado PENDIENTE: $guide")
                 Result.success(guide)
 
             } else {
@@ -213,4 +237,35 @@ class FirestoreGuideRepository(
             Result.failure(e)
         }
     }
+
+    override suspend fun approveGuide(guide: RemissionGuide): Result<Unit> {
+        val userId = authRepository.getCurrentUserId()
+        if (userId.isNullOrBlank()) {
+            return Result.failure(Exception("No hay usuario autenticado."))
+        }
+        if (guide.id.isBlank()) {
+            return Result.failure(IllegalArgumentException("El ID de la guía no puede estar vacío."))
+        }
+
+        return try {
+            val docRef = getGuidesCollection(userId).document(guide.id)
+
+            // Creamos un mapa solo con los campos que queremos actualizar
+            // Usamos el objeto `guide` que puede tener datos editados
+            val updates = mapOf(
+                "ruc" to guide.ruc,
+                "date" to guide.date,
+                "extractedData" to guide.extractedData,
+                "status" to GuideStatus.APPROVED // <-- El cambio clave
+            )
+
+            docRef.update(updates)
+            println(" Guía APROBADA en Firestore: ${guide.id}")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            println(" Error al aprobar guía: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
 }

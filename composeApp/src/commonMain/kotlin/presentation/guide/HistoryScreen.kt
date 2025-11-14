@@ -1,12 +1,11 @@
+@file:Suppress("UNRESOLVED_REFERENCE")
 package presentation.guide
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -16,10 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
@@ -28,16 +26,18 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import data.FirebaseAuthRepository
 import data.FirestoreGuideRepository
+import domain.GuideStatus
 import domain.RemissionGuide
-import presentation.components.DateRangeSelector
 import kotlinx.datetime.*
+import presentation.components.DateRangeSelector
 import presentation.components.TopBarComponent
 import presentation.components.TopBarType
 import utils.AppColors
 import utils.filterGuidesByDate
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.material.icons.Icons
 
 object HistoryScreen : Screen {
-
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
@@ -52,14 +52,19 @@ private object HistoryListContentScreen : Screen {
         val auth = remember { FirebaseAuthRepository() }
         val guideRepository = remember { FirestoreGuideRepository(auth) }
         val allGuides by guideRepository.getGuides().collectAsState(emptyList())
-
         var fechaInicioSeleccionada by remember { mutableStateOf<Long?>(null) }
         var fechaFinSeleccionada by remember { mutableStateOf<Long?>(null) }
-
         val navigator = LocalNavigator.currentOrThrow
-
-        val filteredGuides = remember(allGuides, fechaInicioSeleccionada, fechaFinSeleccionada) {
+        var tabIndex by remember { mutableStateOf(0) }
+        val tabs = listOf("Pendientes", "Procesadas")
+        val dateFilteredGuides = remember(allGuides, fechaInicioSeleccionada, fechaFinSeleccionada) {
             filterGuidesByDate(allGuides, fechaInicioSeleccionada, fechaFinSeleccionada)
+        }
+        val pendingGuides = remember(dateFilteredGuides) {
+            dateFilteredGuides.filter { it.status == GuideStatus.PENDING_REVIEW }
+        }
+        val processedGuides = remember(dateFilteredGuides) {
+            dateFilteredGuides.filter { it.status != GuideStatus.PENDING_REVIEW }
         }
 
         Scaffold(
@@ -115,28 +120,55 @@ private object HistoryListContentScreen : Screen {
                         )
                     }
                 }
-
-                if (filteredGuides.isEmpty()) {
-                    EmptyStateView(hasFilter = fechaInicioSeleccionada != null || fechaFinSeleccionada != null)
-                } else {
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp)
-                    ) {
-                        items(filteredGuides, key = { it.id }) { guide ->
-                            ProfessionalGuideCard(
-                                guide = guide,
-                                onClick = {
-                                    navigator.push(GuideDetailScreen(guide))
-                                }
-                            )
-                        }
+                TabRow(
+                    selectedTabIndex = tabIndex,
+                    containerColor = AppColors.VetBackgroundLight,
+                    contentColor = AppColors.VetPrimaryColor
+                ) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = tabIndex == index,
+                            onClick = { tabIndex = index },
+                            text = { Text(title, fontWeight = if (tabIndex == index) FontWeight.Bold else FontWeight.Normal) }
+                        )
                     }
+                }
+                val hasFilter = fechaInicioSeleccionada != null || fechaFinSeleccionada != null
+                when (tabIndex) {
+                    0 -> GuideListContent(pendingGuides, navigator, 0, hasFilter)
+                    1 -> GuideListContent(processedGuides, navigator, 1, hasFilter)
                 }
             }
         }
     }
 }
+@Composable
+private fun GuideListContent(
+    guides: List<RemissionGuide>,
+    navigator: Navigator,
+    tabIndex: Int,
+    hasFilter: Boolean
+) {
+    if (guides.isEmpty()) {
+        EmptyStateView(hasFilter = hasFilter, tabIndex = tabIndex)
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp)
+        ) {
+            items(guides, key = { it.id }) { guide ->
+                ProfessionalGuideCard(
+                    guide = guide,
+                    onClick = {
+                        navigator.push(GuideDetailScreen(guide))
+                    }
+                )
+            }
+        }
+    }
+}
+
 
 @Composable
 private fun ProfessionalGuideCard(
@@ -152,7 +184,6 @@ private fun ProfessionalGuideCard(
         colors = CardDefaults.cardColors(containerColor = AppColors.VetCardBackground)
     ) {
         Column {
-            // Header de la tarjeta con gradiente
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -218,14 +249,29 @@ private fun ProfessionalGuideCard(
                     )
                 }
             }
-
-            // Contenido de la tarjeta
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp) // <-- Añadido para espaciar filas
+            ) {
                 EnhancedInfoRow(
                     icon = Icons.Outlined.CalendarMonth,
                     label = "Fecha Documento",
                     value = guide.date,
                     iconTint = AppColors.VetPrimaryColor
+                )
+                val statusText = guide.status ?: "Desconocido"
+                val (statusColor, statusIcon) = when (guide.status) {
+                    GuideStatus.PENDING_REVIEW -> AppColors.StatusPendingColor to Icons.Outlined.PendingActions
+                    GuideStatus.APPROVED -> AppColors.StatusApprovedColor to Icons.Outlined.CheckCircle
+                    GuideStatus.SYNCED -> AppColors.StatusSyncedColor to Icons.Outlined.DoneAll
+                    else -> AppColors.StatusErrorColor to Icons.Outlined.ErrorOutline
+                }
+                EnhancedInfoRow(
+                    icon = statusIcon,
+                    label = "Estado",
+                    value = statusText.replace("_", " ").lowercase()
+                        .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() },
+                    iconTint = statusColor
                 )
             }
         }
@@ -282,7 +328,27 @@ private fun EnhancedInfoRow(
 }
 
 @Composable
-private fun EmptyStateView(hasFilter: Boolean) {
+private fun EmptyStateView(hasFilter: Boolean, tabIndex: Int) {
+
+    val triple: Triple<ImageVector, String, String> = when {
+        hasFilter -> Triple(
+            Icons.Outlined.SearchOff,
+            "No hay guías en este período",
+            "Intenta ajustar el rango de fechas para ver más resultados"
+        )
+        tabIndex == 0 -> Triple(
+            Icons.Outlined.Checklist,
+            "No hay guías pendientes",
+            "¡Todo al día! Las nuevas guías aparecerán aquí."
+        )
+        else -> Triple(
+            Icons.Outlined.FolderOpen,
+            "No hay guías procesadas",
+            "Las guías que apruebes aparecerán en esta lista."
+        )
+    }
+    val (icon, title, subtitle) = triple
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -301,7 +367,7 @@ private fun EmptyStateView(hasFilter: Boolean) {
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = if (hasFilter) Icons.Outlined.SearchOff else Icons.Outlined.FolderOpen,
+                    imageVector = icon,
                     contentDescription = "Sin guías",
                     tint = AppColors.VetPrimaryColor,
                     modifier = Modifier.size(64.dp)
@@ -309,22 +375,19 @@ private fun EmptyStateView(hasFilter: Boolean) {
             }
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                text = if (hasFilter) "No hay guías en este período" else "No hay guías registradas",
+                text = title,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color = AppColors.VetTextPrimary
+                color = AppColors.VetTextPrimary,
+                textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = if (hasFilter)
-                    "Intenta ajustar el rango de fechas para ver más resultados"
-                else
-                    "Las guías de remisión aparecerán aquí",
+                text = subtitle,
                 style = MaterialTheme.typography.bodyMedium,
                 color = AppColors.VetTextSecondary,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                textAlign = TextAlign.Center
             )
         }
     }
 }
-

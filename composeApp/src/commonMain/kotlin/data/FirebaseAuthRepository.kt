@@ -87,7 +87,7 @@ class FirebaseAuthRepository : AuthRepository {
                 IllegalStateException("No hay usuario logueado para eliminar.")
             )
             val firestore = Firebase.firestore
-            val collections = listOf("RespuestasEncuesta", "Terrenos", "users")
+            val collections = listOf("guides", "users")
             for (col in collections) {
                 val querySnapshot = when (col) {
                     "users" -> {
