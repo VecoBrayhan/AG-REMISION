@@ -1,4 +1,5 @@
 package domain
+import domain.model.RemissionGuide
 import kotlinx.coroutines.flow.Flow
 
 interface GuideRepository {

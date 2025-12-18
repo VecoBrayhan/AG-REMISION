@@ -1,5 +1,5 @@
 package utils
-import domain.RemissionGuide
+import domain.model.RemissionGuide
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime

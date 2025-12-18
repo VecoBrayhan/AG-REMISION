@@ -48,6 +48,7 @@ kotlin {
             implementation(project.dependencies.platform(libs.android.firebase.bom))
         }
         commonMain.dependencies {
+            implementation(libs.kotlin.test)
             implementation(libs.coil.compose)
             implementation(libs.coil.network.okhttp)
             implementation("io.ktor:ktor-network:2.3.5")
@@ -84,6 +85,11 @@ kotlin {
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
+        }
+        val commonTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+            }
         }
         desktopMain.dependencies {
             implementation("io.ktor:ktor-client-cio:2.3.11")
@@ -146,5 +152,14 @@ compose.desktop {
             packageName = "com.agremision.veco"
             packageVersion = "1.0.0"
         }
+    }
+}
+
+tasks.withType<Test> {
+    testLogging {
+        // Esto hará que salga en la consola: PASSED, FAILED, SKIPPED
+        events("passed", "skipped", "failed")
+        showStandardStreams = true
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
     }
 }

@@ -27,13 +27,13 @@ import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import domain.RemissionGuide
+import domain.model.RemissionGuide
 import domain.model.Producto
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.SerializationException
 import data.FirebaseAuthRepository
 import data.FirestoreGuideRepository
-import domain.GuideStatus
+import domain.model.GuideStatus
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import presentation.components.ReusableSnackbarHost

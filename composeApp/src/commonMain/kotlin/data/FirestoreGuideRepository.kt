@@ -5,7 +5,7 @@ import dev.gitlive.firebase.firestore.CollectionReference
 import dev.gitlive.firebase.firestore.firestore
 import domain.model.GeminiResponse
 import domain.GuideRepository
-import domain.RemissionGuide
+import domain.model.RemissionGuide
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -27,7 +27,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.datetime.Clock
 import utils.formatIsoToReadableDate
-import domain.GuideStatus
+import domain.model.GuideStatus
 
 class FirestoreGuideRepository(
     private val authRepository: FirebaseAuthRepository
@@ -56,18 +56,12 @@ class FirestoreGuideRepository(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun getGuides(): Flow<List<RemissionGuide>> {
-        println("Firestore: Suscribiéndose al flujo de autenticación")
-
-        // 2. Usar flatMapLatest para re-suscribirse cuando el usuario cambie
         return authRepository.currentUser.flatMapLatest { user ->
             if (user == null || user.uid.isBlank()) {
-                // Si no hay usuario, devuelve un flujo con una lista vacía
                 println("Firestore: No hay usuario logueado. Emmiting lista vacía.")
                 flowOf(emptyList())
             } else {
-                // Si hay usuario, obtiene su colección de guías
                 val userId = user.uid
-                println("Firestore: Usuario $userId logueado. Suscribiéndose a 'users/$userId/guides'")
                 getGuidesCollection(userId).snapshots
                     .map { querySnapshot ->
                         println("Firestore: Recibidos ${querySnapshot.documents.size} documentos para $userId.")

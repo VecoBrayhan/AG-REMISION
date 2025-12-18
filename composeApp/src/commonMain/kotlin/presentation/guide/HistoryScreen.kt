@@ -26,8 +26,8 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import data.FirebaseAuthRepository
 import data.FirestoreGuideRepository
-import domain.GuideStatus
-import domain.RemissionGuide
+import domain.model.GuideStatus
+import domain.model.RemissionGuide
 import kotlinx.datetime.*
 import presentation.components.DateRangeSelector
 import presentation.components.TopBarComponent

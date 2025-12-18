@@ -16,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -28,7 +27,7 @@ import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import data.FirebaseAuthRepository
 import data.FirestoreGuideRepository
-import domain.RemissionGuide
+import domain.model.RemissionGuide
 import kotlinx.coroutines.launch
 import presentation.components.ExcelViewer
 import presentation.components.LoadingActionButtonComponent
