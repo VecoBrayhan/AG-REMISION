@@ -139,12 +139,6 @@ object LoginScreen : Screen {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        Icon(
-                            painter = painterResource(Res.drawable.ic_google_logo),
-                            contentDescription = "Logo de Google",
-                            modifier = Modifier.size(24.dp),
-                            tint = Color.Unspecified
-                        )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text("Iniciar sesión con Google", color = AppColors.black)
                     }
